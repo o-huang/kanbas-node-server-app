@@ -56,16 +56,44 @@ import session from "express-session";
 // Lab5(app);
 // app.listen(process.env.PORT || 4000);
 
+const CONNECTION_STRING =
+  process.env.DB_CONNECTION_STRING || "mongodb://127.0.0.1:27017/kanbas";
+
+mongoose
+  .connect(CONNECTION_STRING)
+  .then(() => {
+    console.log("Connected to MongoDB");
+  })
+  .catch((error) => {
+    console.error("Error connecting to MongoDB:", error);
+  });
+
 const app = express();
 
 app.use(
   cors({
     credentials: true,
-    origin: process.env.NODE_ENV === "production"
-      ? process.env.FRONTEND_URL
-      : process.env.FRONTEND_URL_LOCAL,
+    origin:
+      process.env.NODE_ENV === "production"
+        ? process.env.FRONTEND_URL
+        : process.env.FRONTEND_URL_LOCAL,
   })
 );
+
+const sessionOptions = {
+  secret: "any string",
+  resave: false,
+  saveUninitialized: false,
+};
+
+if (process.env.NODE_ENV !== "development") {
+  sessionOptions.proxy = true;
+  sessionOptions.cookie = {
+    sameSite: "none",
+    secure: true,
+  };
+}
+app.use(session(sessionOptions));
 
 app.use(express.json());
 ModuleRoutes(app);
